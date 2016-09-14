@@ -1,5 +1,12 @@
-var approvalsClient = (function () {
+var approvalsClient = (function (approvalsClientConfig) {
     'use strict';
+
+    var defaultConfig = {
+        port: 1338,
+        host: 'localhost'
+    };
+
+    var config = typeof approvalsClientConfig === 'object' ? approvalsClientConfig : defaultConfig;
 
     var xhrRequest = (function () {
         function readyStateHandler(xhr, testName, callback) {
@@ -41,11 +48,8 @@ var approvalsClient = (function () {
         }
 
         function buildRequest(approvalData) {
-            var port = 3217;
-            var host = 'localhost';
-
             return {
-                action: 'http://' + host + ':' + port + '/verify',
+                action: 'http://' + config.host + ':' + config.port + '/verify',
                 data: approvalData
             };
         }
@@ -106,7 +110,7 @@ var approvalsClient = (function () {
     });
 
     return approvalsModule;
-})();
+})(approvalsClientConfig);
 
 // Log to let user know client is loaded
 console.log('~~~ Approvals client loaded ~~~');
