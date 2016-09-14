@@ -1,11 +1,15 @@
 {
   "name": "approvals-client",
-  "version": "1.0.0",
-  "description": "0.1.0",
-  "main": "approvals-client.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cmstead/approvals-client.git"
   },
+  "description": "Client for interacting with approvals-server",
+  "main": "approvals-client.js",
   "author": "Chris Stead",
-  "license": "MPL-2.0"
+  "license": "MPL-2.0",
+  "peerDependencies": {
+    "approvals-server": "^0.1.2"
+  }
 }
