@@ -1,4 +1,4 @@
-var approvalsClient = (function (approvalsClientConfig) {
+var approvalsClient = (function () {
     'use strict';
 
     var defaultConfig = {
@@ -110,7 +110,7 @@ var approvalsClient = (function (approvalsClientConfig) {
     });
 
     return approvalsModule;
-})(approvalsClientConfig);
+})();
 
 // Log to let user know client is loaded
 console.log('~~~ Approvals client loaded ~~~');
