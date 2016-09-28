@@ -1,19 +1,18 @@
 var approvalsClient = (function () {
     'use strict';
 
-    var defaultConfig = {
-        port: 1338,
-        host: 'localhost'
-    };
-
-    var config = typeof approvalsClientConfig === 'object' ? approvalsClientConfig : defaultConfig;
-
     var xhrRequest = (function () {
+
+        function isSuccess(status) {
+            return 199 < status && status < 300;
+        }
+
         function readyStateHandler(xhr, testName, callback) {
             return function () {
                 var status = xhr.status;
+
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    var error = 199 < status && status < 300 ? null : new Error('Approval mismatch: ' + testName);
+                    var error = isSuccess(status) ? null : new Error('Approval mismatch: ' + testName);
                     callback(error);
                 }
             };
@@ -35,7 +34,17 @@ var approvalsClient = (function () {
         };
     })();
 
+    function getConfig() {
+        var defaultConfig = {
+            port: 1338,
+            host: 'localhost'
+        };
+
+        return typeof approvalsClientConfig === 'object' ? approvalsClientConfig : defaultConfig;
+    }
+
     var utils = (function () {
+        var config = getConfig();
 
         function failureDecorator(callback) {
             return function (error) {
@@ -69,45 +78,54 @@ var approvalsClient = (function () {
 
     })();
 
-    var contextReaderFactory = (function (framework) {
+    var contextReaderFactory = (function () {
         var contextReaders = {
             mocha: {
                 readTestName: function (context) {
                     return context.test.fullTitle();
                 }
             },
+
             fallback: {
-                readTestName: function(context) {
+                readTestName: function (context) {
                     return context;
                 }
             }
         };
 
-        var frameworkName = typeof contextReaders[framework] === 'undefined' ? 'fallback' : framework;
+        function contextReaderFactory(framework) {
+            var frameworkName = typeof contextReaders[framework] === 'undefined' ? 'fallback' : framework;
 
-        return contextReaders[frameworkName];
-    });
+            return contextReaders[frameworkName];
+        };
 
-    var approvalsModule = (function (frameworkName) {
+    })();
 
-        var contextReader = contextReaderFactory(frameworkName);
-
-        function verify(approvalString, context, callback) {
+    var approvalsModule = (function () {
+        
+        function getVerifier (contextReader){
+            return function (approvalString, context, callback) {
             var testName = contextReader.readTestName(context);
 
             var approvalData = utils.buildApprovalData(testName, approvalString);
             var request = utils.buildRequest(approvalData);
-            
+
             var decoratedCallback = utils.failureDecorator(callback);
 
             xhrRequest.post(request, decoratedCallback);
+
+            };
         }
 
-        return {
-            verify: verify
-        };
+        return function (frameworkName) {
+            var contextReader = contextReaderFactory(frameworkName);
 
-    });
+            return {
+                verify: getVerifier(contextReader)
+            };
+        }
+
+    })();
 
     return approvalsModule;
 })();
