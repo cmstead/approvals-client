@@ -1,38 +1,38 @@
+var XHR = (function () {
+
+    function isSuccess(status) {
+        return 199 < status && status < 300;
+    }
+
+    function readyStateHandler(xhr, testName, callback) {
+        return function () {
+            var status = xhr.status;
+
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                var error = isSuccess(status) ? null : new Error('Approval mismatch: ' + testName);
+                callback(error);
+            }
+        };
+    }
+
+    function post(request, callback) {
+        var requestData = JSON.stringify(request.data);
+        var xhr = new XMLHttpRequest();
+
+        xhr.open('post', request.action);
+
+        xhr.onreadystatechange = readyStateHandler(xhr, request.data.testName, callback)
+
+        xhr.send(requestData);
+    }
+
+    return {
+        post: post
+    };
+})();
+
 var approvalsClient = (function () {
     'use strict';
-
-    var xhrRequest = (function () {
-
-        function isSuccess(status) {
-            return 199 < status && status < 300;
-        }
-
-        function readyStateHandler(xhr, testName, callback) {
-            return function () {
-                var status = xhr.status;
-
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    var error = isSuccess(status) ? null : new Error('Approval mismatch: ' + testName);
-                    callback(error);
-                }
-            };
-        }
-
-        function post(request, callback) {
-            var requestData = JSON.stringify(request.data);
-            var xhr = new XMLHttpRequest();
-
-            xhr.open('post', request.action);
-
-            xhr.onreadystatechange = readyStateHandler(xhr, request.data.testName, callback)
-
-            xhr.send(requestData);
-        }
-
-        return {
-            post: post
-        };
-    })();
 
     function getConfig() {
         var defaultConfig = {
@@ -93,7 +93,7 @@ var approvalsClient = (function () {
             }
         };
 
-        function contextReaderFactory(framework) {
+        return function (framework) {
             var frameworkName = typeof contextReaders[framework] === 'undefined' ? 'fallback' : framework;
 
             return contextReaders[frameworkName];
@@ -102,17 +102,17 @@ var approvalsClient = (function () {
     })();
 
     var approvalsModule = (function () {
-        
-        function getVerifier (contextReader){
+
+        function getVerifier(contextReader) {
             return function (approvalString, context, callback) {
-            var testName = contextReader.readTestName(context);
+                var testName = contextReader.readTestName(context);
 
-            var approvalData = utils.buildApprovalData(testName, approvalString);
-            var request = utils.buildRequest(approvalData);
+                var approvalData = utils.buildApprovalData(testName, approvalString);
+                var request = utils.buildRequest(approvalData);
 
-            var decoratedCallback = utils.failureDecorator(callback);
+                var decoratedCallback = utils.failureDecorator(callback);
 
-            xhrRequest.post(request, decoratedCallback);
+                XHR.post(request, decoratedCallback);
 
             };
         }
