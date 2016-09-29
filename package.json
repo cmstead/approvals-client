@@ -5,11 +5,21 @@
     "type": "git",
     "url": "https://github.com/cmstead/approvals-client.git"
   },
+  "scripts": {
+    "test": "node node_modules/karma/bin/karma start .conf/karma.conf.js"
+  },
   "description": "Client for interacting with approvals-server",
   "main": "approvals-client.js",
   "author": "Chris Stead",
   "license": "MPL-2.0",
   "peerDependencies": {
     "approvals-server": "^0.1.2"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "karma": "^1.3.0",
+    "karma-phantomjs-launcher": "^1.0.2",
+    "mocha": "^3.1.0",
+    "sinon": "^1.17.6"
   }
 }
