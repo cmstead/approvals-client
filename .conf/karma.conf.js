@@ -4,6 +4,7 @@ module.exports = function(config) {
     frameworks: ['mocha'],
     browsers: ['PhantomJS'],
     files: [
+        './test/test-helpers.js',
         'approvals-client.js',
         './node_modules/sinon/pkg/sinon.js',
         './node_modules/chai/chai.js',

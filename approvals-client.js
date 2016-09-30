@@ -1,29 +1,40 @@
+var xhrFactory = {
+    build: function () {
+        return new XMLHttpRequest();
+    }
+};
+
 var XHR = (function () {
 
     function isSuccess(status) {
         return 199 < status && status < 300;
     }
 
+    function isDone(readyState) {
+        return readyState === XMLHttpRequest.DONE;
+    }
+
+    function noop() { }
+
     function readyStateHandler(xhr, testName, callback) {
         return function () {
-            var status = xhr.status;
+            var next = isDone(xhr.readyState) ? callback : noop;
+            var error = isSuccess(xhr.status) ? null : new Error('Approval mismatch: ' + testName);
 
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                var error = isSuccess(status) ? null : new Error('Approval mismatch: ' + testName);
-                callback(error);
-            }
+            next(error);
         };
     }
 
     function post(request, callback) {
-        var requestData = JSON.stringify(request.data);
-        var xhr = new XMLHttpRequest();
+        var xhr = xhrFactory.build();
 
         xhr.open('post', request.action);
 
         xhr.onreadystatechange = readyStateHandler(xhr, request.data.testName, callback)
 
-        xhr.send(requestData);
+        xhr.send(JSON.stringify(request.data));
+
+        return xhr;
     }
 
     return {
@@ -33,6 +44,22 @@ var XHR = (function () {
 
 var approvalsClient = (function () {
     'use strict';
+
+    function isTypeOf(typeStr) {
+        return function (value) {
+            return typeof value === typeStr;
+        }
+    }
+
+    function throwError(error) {
+        if (isTypeOf('object')(error)) {
+            throw error;
+        }
+    }
+
+    function throwErrorMessage(message) {
+        throwError(new Error('[Approvals Client] ' + message));
+    }
 
     function getConfig() {
         var defaultConfig = {
@@ -48,10 +75,7 @@ var approvalsClient = (function () {
 
         function failureDecorator(callback) {
             return function (error) {
-                if (error) {
-                    throw error;
-                }
-
+                throwError(error);
                 callback();
             };
         }
@@ -93,27 +117,41 @@ var approvalsClient = (function () {
             }
         };
 
-        return function (framework) {
-            var frameworkName = typeof contextReaders[framework] === 'undefined' ? 'fallback' : framework;
+        return function (frameworkName) {
+            var reader = contextReaders[frameworkName];
 
-            return contextReaders[frameworkName];
+            return !isTypeOf('undefined')(reader) ? reader : contextReaders['fallback'];
         };
 
     })();
 
     var approvalsModule = (function () {
 
+        function throwOnBadStringValue(approvalData) {
+            if (!isTypeOf('string')(approvalData)) {
+                throwErrorMessage('Cannot verify non-string object: ' + JSON.stringify(approvalData));
+            }
+        }
+
+        function buildApprovalRequest(contextReader, context, approvalString) {
+            var testName = contextReader.readTestName(context);
+            var approvalData = utils.buildApprovalData(testName, approvalString)
+
+            return utils.buildRequest(approvalData);
+        }
+
+        function sendPostRequest(request, callback) {
+            return XHR.post(request, callback);
+        }
+
         function getVerifier(contextReader) {
             return function (approvalString, context, callback) {
-                var testName = contextReader.readTestName(context);
+                throwOnBadStringValue(approvalString);
 
-                var approvalData = utils.buildApprovalData(testName, approvalString);
-                var request = utils.buildRequest(approvalData);
-
-                var decoratedCallback = utils.failureDecorator(callback);
-
-                XHR.post(request, decoratedCallback);
-
+                return sendPostRequest(
+                    buildApprovalRequest(contextReader, context, approvalString),
+                    utils.failureDecorator(callback)
+                );
             };
         }
 
