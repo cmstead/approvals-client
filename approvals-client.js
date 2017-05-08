@@ -74,9 +74,12 @@ var approvalsClient = (function () {
         var config = getConfig();
 
         function failureDecorator(callback) {
-            var cleanCallback = typeof callback === 'function' ? callback : function (){};
+            var cleanCallback = typeof callback === 'function' ? callback : function () { };
             return function (error) {
-                throwError(error);
+                if (error) {
+                    throwError(error);
+                }
+                
                 cleanCallback();
             };
         }
