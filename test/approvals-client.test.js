@@ -33,6 +33,23 @@ describe('Approvals Client', function () {
             assert.equal(prettyJson(result), expected);
         });
 
+        it('should call XHR.post with correctly constructed approvals request object when in jasmine 2', function () {
+            XHR.post = sinon.spy();
+
+            var testName = 'This is testing Jasmine\'s crappy API hack';
+            var approvals = setUpApprovals('jasmine2', null);
+            var context = buildContext(testName);
+            var expected = buildExpectedCall('test', context);
+
+            jasmine.setTestName(testName);
+
+            approvals.verify('test', context, noop);
+
+            var result = XHR.post.args[0][0];
+
+            assert.equal(prettyJson(result), expected);
+        });
+
         it('should call send approvals request using custom configuration values', function () {
             var customConfig = {
                 host: 'foo',

@@ -5,6 +5,7 @@ module.exports = function(config) {
     browsers: ['PhantomJS'],
     files: [
         './test/test-helpers.js',
+        './test/jasmine-fake.js',
         'approvals-client.js',
         './node_modules/sinon/pkg/sinon.js',
         './node_modules/chai/chai.js',

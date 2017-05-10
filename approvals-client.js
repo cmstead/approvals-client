@@ -79,7 +79,7 @@ var approvalsClient = (function () {
                 if (error) {
                     throwError(error);
                 }
-                
+
                 cleanCallback();
             };
         }
@@ -113,7 +113,11 @@ var approvalsClient = (function () {
                     return context.test.fullTitle();
                 }
             },
-
+            jasmine2: {
+                readTestName: function () {
+                    return jasmine.currentTest.name;
+                }
+            },
             fallback: {
                 readTestName: function (context) {
                     return context;
@@ -159,8 +163,22 @@ var approvalsClient = (function () {
             };
         }
 
+        function runLameJasmineHack(frameworkName) {
+            if (frameworkName === 'jasmine2') {
+                jasmine.getEnv().addReporter({
+                    specStarted: function (result) {
+                        jasmine.currentTest = {
+                            name: result.fullName
+                        };
+                    }
+                });
+            }
+        }
+
         return function (frameworkName) {
             var contextReader = contextReaderFactory(frameworkName);
+
+            runLameJasmineHack(frameworkName);
 
             return {
                 verify: getVerifier(contextReader)
